@@ -168,18 +168,17 @@ var _ = { };
   // Calls the method named by methodName on each value in the list.
   //
   //commented out because current state breaks rest of code
-  // _.invoke = function(list, methodName, args) {
-  //   for(var i = 0; i < list.length; i++) {
-  //     var item = list[i];
-  //     if (typeOf(methodName) === 'string') {
-  //       item[methodName](args);
-  //     }
-  //     else {
-  //       methodName.call(item, args);
-  //     }
-  //   }
-  //   return list;
-  // };
+  _.invoke = function(list, methodName, args) {
+    return _.map(collection, function(item) {
+      var method;
+      if (typeof(functionOrKey) === 'string') {
+        method = item[functionOrKey];
+      } else {
+        method = functionOrKey;
+      }
+      return method.apply(item, args);
+    });
+  };
 
   // Reduces an array or object to a single value by repetitively calling
   // iterator(previousValue, item) for each item. previousValue should be
@@ -290,12 +289,12 @@ return false;
   // Return a function that can be called at most one time. Subsequent calls
   // should return the previously returned value.
   _.once = function(func) {
-      var alreadyCalled = false;
+      var funcCalled = false;
       var result;
       return function() {
-          if (!alreadyCalled) {
+          if (!funcCalled) {
               result = func.apply(this, arguments);
-              alreadyCalled = true;
+              funcCalled = true;
           }
           return result;
       };
@@ -328,12 +327,25 @@ return false;
   // parameter. For example _.delay(someFunction, 500, 'a', 'b') will
   // call someFunction('a', 'b') after 500ms
   _.delay = function(func, wait) {
+    var args = Array.prototype.slice.call(arguments, 2);
+    setTimeout(function() {
+      func.apply(this, args);
+    }, wait);
   };
 
 
 
-  // Shuffle an array.
+  //Shuffle an array.
   _.shuffle = function(array) {
+    //reassign index, put into new array, return that array
+    var shuffled = [];
+    var n = array.length
+    var i;
+    while (n) {
+      i = Math.floor(Math.random() * n--);
+      shuffled.push(array.splice(i, 1)[0]);
+    }
+    return shuffled;
   };
 
   // Sort the object's values by a criterion produced by an iterator.
@@ -341,6 +353,15 @@ return false;
   // of that string. For example, _.sortBy(people, 'name') should sort
   // an array of people by their name.
   _.sortBy = function(collection, iterator) {
+    if (typeof(iterator) === 'function') {
+      return collection.sort(function(a,b) {
+        return iterator(a)-iterator(b)
+      });
+    } else {
+      return collection.sort(function(a,b) {
+        return a[iterator]-b[iterator]
+      });
+    }
   };
 
   // Zip together two or more arrays with elements of the same index
@@ -349,21 +370,70 @@ return false;
   // Example:
   // _.zip(['a','b','c','d'], [1,2,3]) returns [['a',1], ['b',2], ['c',3], ['d',undefined]]
   _.zip = function() {
+    var longestArray = argumentsArray.sort(function(a,b) {return b.length-a.length})[0].length;
+    var results = [];
+    var resultsPrior = [];
+
+    for (var i=0; i<longestArray; i++) {
+        for (var j=0; j<arguments.length; j++) {
+        resultsPrior.push(arguments[j][i]);
+    }
+    results.push(resultsPrior);
+    resultsPrior = [];
+    }
+    return results;
   };
 
   // Takes a multidimensional array and converts it to a one-dimensional array.
   // The new array should contain all elements of the multidimensional array.
   _.flatten = function(nestedArray, result) {
+    var hello = [];
+
+    var simplify = function(array) {
+      _.each(array, function(itemToSimplify) {
+        if (typeof(itemToSimplify) === 'number') {
+          hello.push(itemToSimplify);
+        } else {
+            simplify(itemToSimplify);
+        }
+      });
+    };
+
+    simplify(nestedArray);
+    return hello;
   };
 
   // Takes an arbitrary number of arrays and produces an array that contains
   // every item shared between all the passed-in arrays.
   _.intersection = function() {
-  };
+    var argumentsArray = Array.prototype.slice.call(arguments);
+
+    var result = [];
+
+    _.each(argumentsArray[0], function(item) {
+        var isShared = false;
+
+    for (var i=1; i<argumentsArray.length; i++) {
+      _.each(argumentsArray[i], function(check) {
+        if (item === check) {
+          isShared = true;
+        }
+      });
+    }
+
+    if (isShared) {
+      result.push(item);
+    }
+
+  });
+
+  return result;
+};
 
   // Take the difference between one array and a number of other arrays.
   // Only the elements present in just the first array will remain.
   _.difference = function(array) {
+
   };
 
 }).call(this);
