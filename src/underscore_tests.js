@@ -169,15 +169,17 @@ var _ = { };
   //
   //commented out because current state breaks rest of code
   _.invoke = function(list, methodName, args) {
-    return _.map(collection, function(item) {
-      var method;
-      if (typeof(functionOrKey) === 'string') {
-        method = item[functionOrKey];
-      } else {
-        method = functionOrKey;
-      }
-      return method.apply(item, args);
+  //invoke when provided a method name
+    if(typeof methodName === 'string'){
+      return _.map(list, function(val){
+        return val[methodName](args);
+      });
+    }
+//invoke when provided a function reference
+    return _.map(list, function(val){
+      return methodName.apply(val, args);
     });
+
   };
 
   // Reduces an array or object to a single value by repetitively calling
@@ -370,29 +372,25 @@ return false;
   // Example:
   // _.zip(['a','b','c','d'], [1,2,3]) returns [['a',1], ['b',2], ['c',3], ['d',undefined]]
   _.zip = function() {
-    var longestArray = argumentsArray.sort(function(a,b) {return b.length-a.length})[0].length;
-    var results = [];
-    var resultsPrior = [];
+    var args = [].slice.call(arguments);
+    var longest = args.reduce(function(a,b){
+        return a.length>b.length ? a : b;
+    }, []);
 
-    for (var i=0; i<longestArray; i++) {
-        for (var j=0; j<arguments.length; j++) {
-        resultsPrior.push(arguments[j][i]);
-    }
-    results.push(resultsPrior);
-    resultsPrior = [];
-    }
-    return results;
+    return longest.map(function(_,i){
+        return args.map(function(array){return array[i]});
+    });
   };
 
   // Takes a multidimensional array and converts it to a one-dimensional array.
   // The new array should contain all elements of the multidimensional array.
   _.flatten = function(nestedArray, result) {
-    var hello = [];
+    var rEl = [];
 
     var simplify = function(array) {
       _.each(array, function(itemToSimplify) {
         if (typeof(itemToSimplify) === 'number') {
-          hello.push(itemToSimplify);
+          rEl.push(itemToSimplify);
         } else {
             simplify(itemToSimplify);
         }
@@ -400,7 +398,7 @@ return false;
     };
 
     simplify(nestedArray);
-    return hello;
+    return rEl;
   };
 
   // Takes an arbitrary number of arrays and produces an array that contains
@@ -433,7 +431,8 @@ return false;
   // Take the difference between one array and a number of other arrays.
   // Only the elements present in just the first array will remain.
   _.difference = function(array) {
-
+    var rest = concat.apply(ArrayProto, slice.call(arguments, 1));
+    return _.filter(array, function(value){ return !_.contains(rest, value); });
   };
 
 }).call(this);
